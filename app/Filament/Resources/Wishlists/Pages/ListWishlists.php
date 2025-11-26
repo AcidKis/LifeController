@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Wishlists\Pages;
 use App\Filament\Resources\Wishlists\WishlistResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
-use Filament\Actions\DeleteAction;
 
 class ListWishlists extends ListRecords
 {
