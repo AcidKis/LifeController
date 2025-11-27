@@ -15,6 +15,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 
+
 class WishlistResource extends Resource
 {
     protected static ?string $model = Wishlist::class;
@@ -22,6 +23,27 @@ class WishlistResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $recordTitleAttribute = 'title';
+
+    protected static ?string $navigationLabel = 'Списки желаний';
+
+    protected static ?string $breadcrumb = 'Списки желаний';
+
+    protected static ?string $title = 'Управление вишлистами';
+
+    public static function getModelLabel(): string
+    {
+        return 'вишлист';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return 'Вишлисты';
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Пользователи';
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -48,4 +70,5 @@ class WishlistResource extends Resource
             'edit' => EditWishlist::route('/{record}/edit'),
         ];
     }
+
 }

@@ -30,24 +30,31 @@ class ItemsRelationManager extends RelationManager
         return $schema
             ->components([
                 TextInput::make('sort_order')
+                    ->label('Сортировка')
                     ->required()
                     ->numeric()
                     ->default(100),
-                Toggle::make('completed')
-                    ->required(),
                 TextInput::make('title')
+                    ->label('Желание')
                     ->required(),
                 Textarea::make('description')
+                    ->label('Описание')
                     ->columnSpanFull(),
                 TextInput::make('price')
+                    ->label('Цена')
                     ->numeric()
                     ->prefix('₽'),
                 TextInput::make('url')
+                    ->label('Ссылка')
                     ->url(),
                 FileUpload::make('image')
+                    ->label('Изображение')
                     ->image()
                     ->disk('public')
                     ->directory('wishlist-items'),
+                Toggle::make('completed')
+                    ->label('Исполнено?')
+                    ->required(),
             ]);
     }
 
@@ -57,23 +64,31 @@ class ItemsRelationManager extends RelationManager
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('sort_order')
+                    ->label('Сортировка')
                     ->numeric()
                     ->sortable(),
                 IconColumn::make('completed')
+                    ->label('Исполнено?')
                     ->boolean(),
                 TextColumn::make('title')
+                    ->label('Желание')
                     ->searchable(),
                 TextColumn::make('price')
+                    ->label('Цена')
                     ->money()
                     ->sortable(),
                 TextColumn::make('url')
+                    ->label('Ссылка')
                     ->searchable(),
-                ImageColumn::make('image'),
+                ImageColumn::make('image')
+                    ->label('Изображение'),
                 TextColumn::make('created_at')
+                    ->label('Создано')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('updated_at')
+                    ->label('Обновлено')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

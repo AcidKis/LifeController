@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('wishlist_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('wishlist_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->nullable() // Делаем поле nullable
+                ->constrained()
+                ->cascadeOnDelete();
             $table->integer('sort_order')->default(100);
             $table->boolean('completed')->default(false);
             $table->string('title');
