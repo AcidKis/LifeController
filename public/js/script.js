@@ -1,7 +1,7 @@
 // Основные функции для LifeFlow - Life-контроллера
 
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initAnimations();
     initAuthState();
     initProgressBars();
@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Анимации при скролле
 function initAnimations() {
     const animatedElements = document.querySelectorAll('.feature-card, .step, .stat-card, .benefit-card');
-    
+
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -22,7 +22,7 @@ function initAnimations() {
             }
         });
     }, { threshold: 0.1 });
-    
+
     animatedElements.forEach(el => {
         el.style.opacity = '0';
         el.style.transform = 'translateY(30px)';
@@ -36,10 +36,10 @@ function initAuthState() {
     // Имитация состояния авторизации (для демонстрации)
     // В реальном приложении это будет определяться бэкендом
     const isAuthenticated = false; // Измените на true для просмотра авторизованного состояния
-    
+
     const guestButtons = document.getElementById('guest-buttons');
     const userProfile = document.getElementById('user-profile');
-    
+
     if (isAuthenticated) {
         guestButtons.classList.add('hidden');
         userProfile.classList.remove('hidden');
@@ -69,21 +69,21 @@ function initProgressBars() {
 function initCardInteractions() {
     const cards = document.querySelectorAll('.wishlist-card, .feature-card, .benefit-card');
     cards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
+        card.addEventListener('mouseenter', function () {
             if (this.classList.contains('feature-card') || this.classList.contains('benefit-card')) {
                 this.style.transform = 'translateY(-10px)';
             } else {
                 this.style.transform = 'translateY(-5px)';
             }
         });
-        
-        card.addEventListener('mouseleave', function() {
+
+        card.addEventListener('mouseleave', function () {
             this.style.transform = 'translateY(0)';
         });
-        
+
         // Для карточек вишлистов добавляем клик для перехода
         if (card.classList.contains('wishlist-card')) {
-            card.addEventListener('click', function(e) {
+            card.addEventListener('click', function (e) {
                 if (!e.target.closest('button')) {
                     const cardId = this.dataset.id || '1';
                     window.location.href = `/wishlists/${cardId}`;
@@ -97,10 +97,10 @@ function initCardInteractions() {
 function initCheckboxInteractions() {
     const checkboxes = document.querySelectorAll('.item-checkbox input');
     checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
+        checkbox.addEventListener('change', function () {
             const item = this.closest('.wishlist-item');
             const itemId = item.dataset.itemId || '1';
-            
+
             if (this.checked) {
                 item.classList.add('completed');
                 toggleWishlistItem(itemId, true);
@@ -108,7 +108,7 @@ function initCheckboxInteractions() {
                 item.classList.remove('completed');
                 toggleWishlistItem(itemId, false);
             }
-            
+
             // Обновляем прогресс вишлиста
             updateWishlistProgress();
         });
@@ -119,10 +119,10 @@ function initCheckboxInteractions() {
 function initFormValidations() {
     const forms = document.querySelectorAll('form');
     forms.forEach(form => {
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             const requiredFields = form.querySelectorAll('[required]');
             let isValid = true;
-            
+
             requiredFields.forEach(field => {
                 if (!field.value.trim()) {
                     isValid = false;
@@ -131,7 +131,7 @@ function initFormValidations() {
                     removeInvalidHighlight(field);
                 }
             });
-            
+
             if (!isValid) {
                 e.preventDefault();
                 showNotification('Пожалуйста, заполните все обязательные поля', 'error');
@@ -156,7 +156,7 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type} fade-in`;
     notification.textContent = message;
-    
+
     // Стилизация уведомления
     notification.style.position = 'fixed';
     notification.style.top = '20px';
@@ -167,7 +167,7 @@ function showNotification(message, type = 'info') {
     notification.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.3)';
     notification.style.fontWeight = '500';
     notification.style.fontFamily = "'Inter', sans-serif";
-    
+
     if (type === 'error') {
         notification.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
     } else if (type === 'success') {
@@ -175,10 +175,10 @@ function showNotification(message, type = 'info') {
     } else {
         notification.style.background = 'var(--gradient-primary)';
     }
-    
+
     // Добавляем в DOM
     document.body.appendChild(notification);
-    
+
     // Удаляем через 5 секунд
     setTimeout(() => {
         notification.style.opacity = '0';
@@ -193,7 +193,7 @@ function showNotification(message, type = 'info') {
 function toggleWishlistItem(itemId, completed) {
     // Здесь будет AJAX запрос к серверу
     console.log(`Toggling item ${itemId} to ${completed}`);
-    
+
     // В реальном приложении здесь будет fetch запрос к API
     // fetch(`/api/wishlist-items/${itemId}`, {
     //     method: 'PUT',
@@ -217,21 +217,21 @@ function updateWishlistProgress() {
     const items = document.querySelectorAll('.wishlist-item');
     const totalItems = items.length;
     const completedItems = document.querySelectorAll('.wishlist-item.completed').length;
-    
+
     const progressPercentage = totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
-    
+
     // Обновляем прогресс-бар
     const progressFill = document.querySelector('.overall-progress .progress-fill');
     if (progressFill) {
         progressFill.style.width = `${progressPercentage}%`;
     }
-    
+
     // Обновляем текстовое отображение прогресса
     const progressText = document.querySelector('.progress-label span:last-child');
     if (progressText) {
         progressText.textContent = `${completedItems}/${totalItems} (${Math.round(progressPercentage)}%)`;
     }
-    
+
     console.log(`Progress updated: ${completedItems}/${totalItems} (${progressPercentage}%)`);
 }
 
@@ -245,33 +245,102 @@ function createWishlist() {
 function addWishlistItem(form) {
     // В реальном приложении здесь будет отправка формы
     console.log('Adding new wishlist item');
-    
+
     // Показать уведомление об успехе
     showNotification('Элемент успешно добавлен в вишлист', 'success');
-    
+
     // Сбросить форму
     form.reset();
-    
+
     // В реальном приложении здесь будет обновление интерфейса
 }
 
+// Функции для страницы вишлистов
+function initWishlistPage() {
+    initWishlistCardInteractions();
+    initWishlistProgressBars();
+}
+
+// Инициализация взаимодействий с карточками вишлистов
+function initWishlistCardInteractions() {
+    const cards = document.querySelectorAll('.wishlist-card');
+    cards.forEach(card => {
+        card.addEventListener('click', function (e) {
+            // Проверяем, не был ли клик по кнопке или ссылке внутри карточки
+            if (!e.target.closest('button') && !e.target.closest('a')) {
+                const cardId = this.dataset.id;
+                if (cardId) {
+                    window.location.href = `/wishlists/${cardId}`;
+                }
+            }
+        });
+
+        // Hover эффекты
+        card.addEventListener('mouseenter', function () {
+            this.style.transform = 'translateY(-10px)';
+        });
+
+        card.addEventListener('mouseleave', function () {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+}
+
+// Инициализация анимации прогресс-баров вишлистов
+function initWishlistProgressBars() {
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        const fill = bar.querySelector('.progress-fill');
+        if (fill) {
+            // Анимируем заполнение прогресс-бара
+            const width = fill.style.width;
+            fill.style.width = '0';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 500);
+        }
+    });
+}
+
+// Функция для создания вишлиста
+function createWishlist() {
+    // В реальном приложении здесь будет открытие модального окна или переход на страницу создания
+    showNotification('Функция создания вишлиста будет реализована позже', 'info');
+}
+
+// Функция для удаления вишлиста
+function deleteWishlist(wishlistId) {
+    if (confirm('Вы уверены, что хотите удалить этот вишлист?')) {
+        // Здесь будет AJAX запрос на удаление
+        console.log(`Deleting wishlist ${wishlistId}`);
+        showNotification('Вишлист успешно удален', 'success');
+
+        // В реальном приложении здесь будет обновление интерфейса
+        // document.querySelector(`[data-id="${wishlistId}"]`).remove();
+    }
+}
+
+
 // Добавляем обработчики событий после загрузки DOM
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Обработчик для кнопки создания вишлиста
     const createButton = document.querySelector('.create-button');
     if (createButton) {
-        createButton.addEventListener('click', createWishlist);
+        createButton.addEventListener('click', function (e) {
+            e.preventDefault();
+            createWishlist();
+        });
     }
-    
+
     // Обработчик для формы добавления элемента
     const addItemForm = document.querySelector('.add-item-form form');
     if (addItemForm) {
-        addItemForm.addEventListener('submit', function(e) {
+        addItemForm.addEventListener('submit', function (e) {
             e.preventDefault();
             addWishlistItem(this);
         });
     }
-    
+
     // Добавляем стили для невалидных полей
     const style = document.createElement('style');
     style.textContent = `
@@ -281,4 +350,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     `;
     document.head.appendChild(style);
+
+    if (document.querySelector('.wishlists-grid')) {
+        initWishlistPage();
+    }
+
 });

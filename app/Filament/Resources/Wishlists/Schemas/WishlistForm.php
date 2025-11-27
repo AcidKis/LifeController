@@ -21,6 +21,7 @@ class WishlistForm
                 Select::make('user_id')
                     ->label('Владелец вишлиста')
                     ->relationship('user', 'name')
+                    ->default(auth()->id()) // Автоматически устанавливаем текущего пользователя
                     ->required()
                     ->selectablePlaceholder(false),
 
