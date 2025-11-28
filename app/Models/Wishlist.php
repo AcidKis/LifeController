@@ -44,7 +44,26 @@ class Wishlist extends Model
     {
         return $this->hasMany(WishlistEditor::class);
     }
+    public function getTotalItemsAttribute(): int
+    {
+        return $this->items()->count();
+    }
 
+    public function getCompletedItemsAttribute(): int
+    {
+        return $this->items()->where('completed', true)->count();
+    }
+
+    public function getProgressPercentageAttribute(): int
+    {
+        $total = $this->total_items;
+        if ($total === 0) {
+            return 0;
+        }
+
+        $completed = $this->completed_items;
+        return (int) round(($completed / $total) * 100);
+    }
     public function viewers(): HasMany
     {
         return $this->hasMany(WishlistViewer::class);
