@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Wishlist;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -49,7 +50,8 @@ class WishlistController extends Controller
      */
     public function create()
     {
-        return view('wishlists.create');
+        $users = User::where('id', '!=', Auth::id())->get();
+        return view('wishlists.create', compact('users'));
     }
 
     /**
@@ -61,7 +63,11 @@ class WishlistController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'visibility' => 'required|in:public,private,shared',
-            'edit_permission' => 'required|in:owner,selected,all',
+            'edit_permission' => 'required|in:owner,selected',
+            'viewer_users' => 'nullable|array',
+            'viewer_users.*' => 'exists:users,id',
+            'editor_users' => 'nullable|array',
+            'editor_users.*' => 'exists:users,id',
         ]);
 
         $wishlist = Wishlist::create([
@@ -73,6 +79,16 @@ class WishlistController extends Controller
             'sort_order' => 0,
             'is_archived' => false,
         ]);
+
+        // Прикрепляем пользователей для просмотра (если выбрана общая видимость)
+        if ($validated['visibility'] === 'shared' && isset($validated['viewer_users'])) {
+            $wishlist->viewerUsers()->sync($validated['viewer_users']);
+        }
+
+        // Прикрепляем пользователей для редактирования (если выбрано выбранные пользователи)
+        if ($validated['edit_permission'] === 'selected' && isset($validated['editor_users'])) {
+            $wishlist->editorUsers()->sync($validated['editor_users']);
+        }
 
         return redirect()->route('wishlists.index')
             ->with('success', 'Вишлист успешно создан!');
@@ -102,7 +118,10 @@ class WishlistController extends Controller
             abort(403, 'Доступ запрещен');
         }
 
-        return view('wishlists.edit', compact('wishlist'));
+        $users = User::where('id', '!=', Auth::id())->get();
+        $wishlist->load(['viewerUsers', 'editorUsers']);
+        
+        return view('wishlists.edit', compact('wishlist', 'users'));
     }
 
     /**
@@ -119,11 +138,34 @@ class WishlistController extends Controller
             'description' => 'nullable|string',
             'visibility' => 'required|in:public,private,shared',
             'edit_permission' => 'required|in:owner,selected,all',
+            'viewer_users' => 'nullable|array',
+            'viewer_users.*' => 'exists:users,id',
+            'editor_users' => 'nullable|array',
+            'editor_users.*' => 'exists:users,id',
         ]);
 
-        $wishlist->update($validated);
+        $wishlist->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'visibility' => $validated['visibility'],
+            'edit_permission' => $validated['edit_permission'],
+        ]);
 
-        return redirect()->route('wishlists.index')
+        // Обновляем пользователей для просмотра
+        if ($validated['visibility'] === 'shared') {
+            $wishlist->viewerUsers()->sync($validated['viewer_users'] ?? []);
+        } else {
+            $wishlist->viewerUsers()->detach();
+        }
+
+        // Обновляем пользователей для редактирования
+        if ($validated['edit_permission'] === 'selected') {
+            $wishlist->editorUsers()->sync($validated['editor_users'] ?? []);
+        } else {
+            $wishlist->editorUsers()->detach();
+        }
+
+        return redirect()->route('wishlists.show', $wishlist)
             ->with('success', 'Вишлист успешно обновлен!');
     }
 

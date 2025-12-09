@@ -59,10 +59,6 @@
                         <span>Редакторы: {{ $wishlist->editorUsers->count() }}</span>
                         @endif
                     </div>
-                    <div class="meta-right">
-                        <span>Создан: {{ $wishlist->created_at->format('d.m.Y') }}</span>
-                        <span>Обновлен: {{ $wishlist->updated_at->format('d.m.Y') }}</span>
-                    </div>
                 </div>
             </div>
         </div>

@@ -449,8 +449,8 @@ class LifeFlow {
         removeButton.classList.add('hidden');
     }
 
-    // УПРОЩЕННЫЙ МЕТОД: Переключение состояния элемента
-    async toggleItemCompletion(checkbox) {
+    // СИНХРОННЫЙ МЕТОД: Переключение состояния элемента с XMLHttpRequest
+    toggleItemCompletion(checkbox) {
         const completed = checkbox.checked;
         const url = checkbox.dataset.url;
         const itemElement = checkbox.closest('.wishlist-item');
@@ -463,45 +463,53 @@ class LifeFlow {
                 itemElement.classList.remove('completed');
             }
 
-            // Отправляем запрос к серверу
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ completed: completed })
-            });
+            // Отправляем запрос к серверу через XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', url, false); // false делает запрос синхронным
+            
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.send(JSON.stringify({ completed: completed }));
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-            const data = await response.json();
-
-            if (data.success) {
-                if (data.progress) {
-                    this.updateWishlistProgress(data.progress);
-                }
-                this.showNotification('Статус записи обновлен', 'success');
-            } else {
-                // Откатываем изменения при ошибке
-                checkbox.checked = !completed;
-                if (completed) {
-                    itemElement.classList.remove('completed');
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                
+                if (data.success) {
+                    if (data.progress) {
+                        this.updateWishlistProgress(data.progress);
+                    }
+                    this.showNotification('Статус записи обновлен', 'success');
                 } else {
-                    itemElement.classList.add('completed');
+                    // Откатываем изменения при ошибке
+                    checkbox.checked = !completed;
+                    if (completed) {
+                        itemElement.classList.remove('completed');
+                    } else {
+                        itemElement.classList.add('completed');
+                    }
+                    this.showNotification(data.message || 'Ошибка при обновлении статуса', 'error');
                 }
-                throw new Error(data.message);
+            } else {
+                throw new Error(`HTTP error! status: ${xhr.status}`);
             }
 
         } catch (error) {
             console.error('Error:', error);
+            // Откатываем изменения при ошибке
+            checkbox.checked = !completed;
+            if (completed) {
+                itemElement.classList.remove('completed');
+            } else {
+                itemElement.classList.add('completed');
+            }
             this.showNotification('Ошибка при обновлении статуса', 'error');
         }
     }
 
-    // УПРОЩЕННЫЙ МЕТОД: Удаление элемента
-    async deleteItem(button) {
+    // СИНХРОННЫЙ МЕТОД: Удаление элемента с XMLHttpRequest
+    deleteItem(button) {
         const url = button.dataset.url;
         const itemElement = button.closest('.wishlist-item');
 
@@ -510,41 +518,48 @@ class LifeFlow {
         }
 
         try {
-            const response = await fetch(url, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
-                }
-            });
+            // Отправляем запрос к серверу через XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            xhr.open('DELETE', url, false); // false делает запрос синхронным
+            
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.send();
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
 
-            const data = await response.json();
+                if (data.success) {
+                    // Анимация удаления
+                    itemElement.style.opacity = '0';
+                    itemElement.style.transform = 'translateY(20px)';
+                    
+                    // Удаляем элемент после анимации
+                    setTimeout(() => {
+                        itemElement.remove();
+                        
+                        // Обновляем прогресс
+                        if (data.progress) {
+                            this.updateWishlistProgress(data.progress);
+                        }
+                        
+                        // Обновляем счетчик элементов
+                        this.updateItemsCount();
+                        
+                        // Если записей не осталось, показываем empty state
+                        if (document.querySelectorAll('.wishlist-item').length === 0) {
+                            this.showEmptyState();
+                        }
+                    }, 300);
 
-            if (data.success) {
-                // Анимация удаления
-                itemElement.style.opacity = '0';
-                itemElement.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    itemElement.remove();
-                    // Обновляем прогресс
-                    if (data.progress) {
-                        this.updateWishlistProgress(data.progress);
-                    }
-                    // Обновляем счетчик элементов
-                    this.updateItemsCount();
-                }, 300);
-
-                this.showNotification('Запись успешно удалена', 'success');
-
-                // Если записей не осталось, показываем empty state
-                if (document.querySelectorAll('.wishlist-item').length === 0) {
-                    this.showEmptyState();
+                    this.showNotification('Запись успешно удалена', 'success');
+                } else {
+                    this.showNotification(data.message || 'Ошибка при удалении записи', 'error');
                 }
             } else {
-                throw new Error(data.message);
+                throw new Error(`HTTP error! status: ${xhr.status}`);
             }
 
         } catch (error) {
@@ -553,20 +568,82 @@ class LifeFlow {
         }
     }
 
-    // НОВЫЙ МЕТОД: Редактирование элемента
-    async editItem(itemId) {
+    // СИНХРОННЫЙ МЕТОД: Редактирование элемента с XMLHttpRequest
+    editItem(itemId) {
         try {
-            // Получаем данные элемента через AJAX
-            const response = await fetch(`/wishlist-items/${itemId}`, {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            // Отправляем запрос к серверу через XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', `/wishlist-items/${itemId}`, false); // false делает запрос синхронным
+            
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            
+            xhr.send();
+
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                
+                if (response.success) {
+                    const item = response.item;
+                    
+                    // Заполняем форму редактирования данными элемента
+                    this.fillEditForm(item);
+                    
+                    // Показываем модальное окно
+                    this.showEditModal();
+                } else {
+                    this.showNotification(response.message || 'Ошибка при загрузке данных записи', 'error');
                 }
-            });
+            } else if (xhr.status === 405) {
+                // Если метод не поддерживается, используем данные со страницы
+                this.editItemFromDOM(itemId);
+            } else {
+                throw new Error(`HTTP error! status: ${xhr.status}`);
+            }
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        } catch (error) {
+            console.error('Error:', error);
+            this.showNotification('Ошибка при загрузке данных записи', 'error');
+        }
+    }
 
-            const item = await response.json();
+    // МЕТОД: Редактирование элемента с данными из DOM (без запроса к серверу)
+    editItemFromDOM(itemId) {
+        try {
+            // Ищем элемент на странице
+            const itemElement = document.querySelector(`.wishlist-item[data-item-id="${itemId}"]`);
+            if (!itemElement) {
+                this.showNotification('Элемент не найден на странице', 'error');
+                return;
+            }
+
+            // Получаем данные из DOM
+            const title = itemElement.querySelector('.item-title').textContent.trim();
+            
+            const descriptionElement = itemElement.querySelector('.item-description');
+            const description = descriptionElement ? descriptionElement.textContent.trim() : '';
+            
+            const priceElement = itemElement.querySelector('.item-price');
+            let price = '';
+            if (priceElement && priceElement.textContent) {
+                // Убираем пробелы, знак рубля и заменяем запятую на точку
+                price = priceElement.textContent.replace(/[^\d,]/g, '').replace(',', '.');
+            }
+            
+            const urlElement = itemElement.querySelector('.item-link');
+            const url = urlElement ? urlElement.href : '';
+            
+            const imageElement = itemElement.querySelector('.item-image img');
+            const imageUrl = imageElement ? imageElement.src : '';
+
+            const item = {
+                id: itemId,
+                title: title,
+                description: description,
+                price: price,
+                url: url,
+                image_url: imageUrl
+            };
 
             // Заполняем форму редактирования данными элемента
             this.fillEditForm(item);
@@ -580,8 +657,8 @@ class LifeFlow {
         }
     }
 
-    // НОВЫЙ МЕТОД: Заполнение формы редактирования
     fillEditForm(item) {
+        console.log(item);
         document.getElementById('edit_title').value = item.title;
         document.getElementById('edit_description').value = item.description || '';
         document.getElementById('edit_price').value = item.price || '';
@@ -654,8 +731,8 @@ class LifeFlow {
         }
     }
 
-    // НОВЫЙ МЕТОД: Обработка формы редактирования
-    async handleEditItemForm(form) {
+    // СИНХРОННЫЙ МЕТОД: Обработка формы редактирования с XMLHttpRequest
+    handleEditItemForm(form) {
         const formData = new FormData(form);
         
         // Валидация обязательных полей
@@ -665,32 +742,34 @@ class LifeFlow {
         }
 
         try {
-            const response = await fetch(form.action, {
-                method: 'POST', // потому что мы используем @method('PUT') в форме
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
-                }
-            });
+            // Отправляем запрос к серверу через XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', form.action, false); // false делает запрос синхронным
+            
+            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.send(formData);
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
 
-            const data = await response.json();
-
-            if (data.success) {
-                this.showNotification('Запись успешно обновлена', 'success');
-                this.hideEditModal();
-                
-                // Обновляем данные на странице
-                this.updateItemInList(data.item);
-                
-                // Обновляем прогресс, если он изменился
-                if (data.progress) {
-                    this.updateWishlistProgress(data.progress);
+                if (data.success) {
+                    this.showNotification('Запись успешно обновлена', 'success');
+                    this.hideEditModal();
+                    
+                    // Обновляем данные на странице
+                    this.updateItemInList(data.item);
+                    
+                    // Обновляем прогресс, если он изменился
+                    if (data.progress) {
+                        this.updateWishlistProgress(data.progress);
+                    }
+                } else {
+                    this.showNotification(data.message || 'Ошибка при обновлении записи', 'error');
                 }
             } else {
-                throw new Error(data.message);
+                throw new Error(`HTTP error! status: ${xhr.status}`);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -763,8 +842,8 @@ class LifeFlow {
         }
     }
 
-    // ИСПРАВЛЕННЫЙ МЕТОД: Обработка добавления элемента с изображением
-    async handleAddItemForm(form) {
+    // СИНХРОННЫЙ МЕТОД: Обработка добавления элемента с изображением с XMLHttpRequest
+    handleAddItemForm(form) {
         const formData = new FormData(form);
         
         // Валидация обязательных полей
@@ -774,29 +853,31 @@ class LifeFlow {
         }
 
         try {
-            const response = await fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
+            // Отправляем запрос к серверу через XMLHttpRequest
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', form.action, false); // false делает запрос синхронным
+            
+            xhr.setRequestHeader('X-CSRF-TOKEN', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            xhr.setRequestHeader('Accept', 'application/json');
+            
+            xhr.send(formData);
+
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+
+                if (data.success) {
+                    this.showNotification('Запись успешно добавлена', 'success');
+                    
+                    // Обновляем страницу вместо динамического добавления
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                    
+                } else {
+                    this.showNotification(data.message || 'Ошибка при добавлении записи', 'error');
                 }
-            });
-
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-            const data = await response.json();
-
-            if (data.success) {
-                this.showNotification('Запись успешно добавлена', 'success');
-                
-                // Обновляем страницу вместо динамического добавления
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-                
             } else {
-                throw new Error(data.message);
+                throw new Error(`HTTP error! status: ${xhr.status}`);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -816,6 +897,44 @@ class LifeFlow {
             
             if (progressStats && progress.completed !== undefined && progress.total !== undefined) {
                 progressStats.textContent = `${progress.completed}/${progress.total} (${progress.percentage || 0}%)`;
+            }
+        }
+    }
+
+    // Вспомогательные методы
+    updateItemsCount() {
+        const itemsCount = document.querySelector('.items-count');
+        if (itemsCount) {
+            const count = document.querySelectorAll('.wishlist-item').length;
+            itemsCount.textContent = `${count} записей`;
+        }
+    }
+
+    showEmptyState() {
+        // Если записей не осталось, можно добавить логику для показа empty state
+        const itemsSection = document.querySelector('.wishlist-items-section');
+        if (itemsSection && !itemsSection.querySelector('.empty-items')) {
+            const emptyState = document.createElement('div');
+            emptyState.className = 'empty-items';
+            emptyState.innerHTML = `
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="currentColor" fill-opacity="0.3" />
+                </svg>
+                <h3>Пока нет записей в вишлисте</h3>
+                <p>Добавьте первую запись, чтобы начать заполнять вишлист</p>
+                <button class="cta-button" onclick="showAddItemForm()">Добавить первую запись</button>
+            `;
+            
+            // Удаляем старый контейнер с элементами
+            const itemsGrid = itemsSection.querySelector('.items-grid');
+            if (itemsGrid) {
+                itemsGrid.remove();
+            }
+            
+            // Добавляем empty state
+            const sectionHeader = itemsSection.querySelector('.section-header');
+            if (sectionHeader) {
+                itemsSection.insertBefore(emptyState, sectionHeader.nextSibling);
             }
         }
     }
