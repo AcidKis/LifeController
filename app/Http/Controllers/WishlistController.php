@@ -14,33 +14,12 @@ class WishlistController extends Controller
      */
     public function index()
     {
-        // Получаем вишлисты, доступные текущему пользователю
-        $wishlists = Wishlist::with(['user', 'items', 'editorUsers', 'viewerUsers'])
-            ->where(function ($query) {
-                // Вишлисты пользователя
-                $query->where('user_id', Auth::id())
-                      // Или публичные вишлисты
-                      ->orWhere('visibility', \App\Enums\Visibility::PUBLIC)
-                      // Или вишлисты, где пользователь является редактором/зрителем
-                      ->orWhereHas('editorUsers', function ($q) {
-                          $q->where('user_id', Auth::id());
-                      })
-                      ->orWhereHas('viewerUsers', function ($q) {
-                          $q->where('user_id', Auth::id());
-                      });
-            })
+        $wishlists = Wishlist::forUser(Auth::user())
+            ->with(['user', 'editorUsers', 'viewerUsers'])
+            ->withProgress()
             ->active()
             ->ordered()
             ->get();
-
-        // Подсчитываем статистику для каждого вишлиста
-        $wishlists->each(function ($wishlist) {
-            $wishlist->total_items = $wishlist->items->count();
-            $wishlist->completed_items = $wishlist->items->where('completed', true)->count();
-            $wishlist->progress_percentage = $wishlist->total_items > 0 
-                ? round(($wishlist->completed_items / $wishlist->total_items) * 100) 
-                : 0;
-        });
 
         return view('wishlists.index', compact('wishlists'));
     }

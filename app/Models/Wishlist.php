@@ -4,15 +4,14 @@ namespace App\Models;
 
 use App\Enums\Visibility;
 use App\Enums\EditPermission;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Wishlist extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'user_id',
         'title',
@@ -40,86 +39,51 @@ class Wishlist extends Model
         return $this->hasMany(WishlistItem::class);
     }
 
-    public function editors(): HasMany
+    public function editorUsers(): BelongsToMany
     {
-        return $this->hasMany(WishlistEditor::class);
-    }
-    public function getTotalItemsAttribute(): int
-    {
-        return $this->items()->count();
+        return $this->belongsToMany(User::class, 'wishlist_editors');
     }
 
-    public function getCompletedItemsAttribute(): int
+    public function viewerUsers(): BelongsToMany
     {
-        return $this->items()->where('completed', true)->count();
+        return $this->belongsToMany(User::class, 'wishlist_viewers');
     }
+
+    // Accessors
+
+    protected $appends = ['progress_percentage'];
 
     public function getProgressPercentageAttribute(): int
     {
-        $total = $this->total_items;
-        if ($total === 0) {
-            return 0;
-        }
-
-        $completed = $this->completed_items;
-        return (int) round(($completed / $total) * 100);
+        return $this->items_count > 0
+            ? round(($this->completed_items_count / $this->items_count) * 100)
+            : 0;
     }
-    public function viewers(): HasMany
+
+    public function scopeForUser(Builder $query, User $user): Builder
     {
-        return $this->hasMany(WishlistViewer::class);
+        return $query->where(function (Builder $q) use ($user) {
+            $q->where('user_id', $user->id)
+                ->orWhere('visibility', Visibility::PUBLIC)
+                ->orWhereHas('editorUsers', fn($q) => $q->where('user_id', $user->id))
+                ->orWhereHas('viewerUsers', fn($q) => $q->where('user_id', $user->id));
+        });
     }
 
-    public function editorUsers()
+    public function scopeWithProgress(Builder $query): Builder
     {
-        return $this->belongsToMany(User::class, 'wishlist_editors', 'wishlist_id', 'user_id');
+        return $query->withCount([
+            'items',
+            'items as completed_items_count' => fn($query) => $query->where('completed', true)
+        ]);
     }
 
-    public function viewerUsers()
-    {
-        return $this->belongsToMany(User::class, 'wishlist_viewers', 'wishlist_id', 'user_id');
-    }
-
-    public function canEdit(User $user): bool
-    {
-        if ($this->user_id === $user->id) {
-            return true;
-        }
-
-        if ($this->edit_permission === EditPermission::SELECTED) {
-            return $this->editorUsers()->where('user_id', $user->id)->exists();
-        }
-
-        return false;
-    }
-
-    public function canView(User $user): bool
-    {
-        if ($this->user_id === $user->id) {
-            return true;
-        }
-
-        if ($this->visibility === Visibility::PUBLIC) {
-            return true;
-        }
-
-        if ($this->visibility === Visibility::SHARED) {
-            return $this->viewerUsers()->where('user_id', $user->id)->exists();
-        }
-
-        return false;
-    }
-
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_archived', false);
     }
 
-    public function scopeArchived($query)
-    {
-        return $query->where('is_archived', true);
-    }
-
-    public function scopeOrdered($query)
+    public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('created_at');
     }

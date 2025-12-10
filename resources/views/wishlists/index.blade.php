@@ -6,12 +6,14 @@
 <div class="container">
     <div class="page-header">
         <h1 class="page-title">Мои вишлисты</h1>
+        @can('create', \App\Models\Wishlist::class)
         <a href="{{ route('wishlists.create') }}" class="create-button">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor" />
             </svg>
             Создать вишлист
         </a>
+        @endcan
     </div>
 
     @if(session('success'))
@@ -44,7 +46,7 @@
                 <div class="progress-container">
                     <div class="progress-info">
                         <span>Прогресс выполнения</span>
-                        <span>{{ $wishlist->completed_items }}/{{ $wishlist->total_items }}</span>
+                        <span>{{ $wishlist->completed_items_count }}/{{ $wishlist->items_count }}</span>
                     </div>
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: {{ $wishlist->progress_percentage }}%"></div>
@@ -71,7 +73,9 @@
         </svg>
         <h3>У вас пока нет вишлистов</h3>
         <p>Создайте свой первый вишлист и начните добавлять желания</p>
+        @can('create', \App\Models\Wishlist::class)
         <a href="{{ route('wishlists.create') }}" class="cta-button">Создать первый вишлист</a>
+        @endcan
     </div>
     @endif
 </div>
