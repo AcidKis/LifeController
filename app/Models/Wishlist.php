@@ -60,6 +60,8 @@ class Wishlist extends Model
             : 0;
     }
 
+
+    //scopes
     public function scopeForUser(Builder $query, User $user): Builder
     {
         return $query->where(function (Builder $q) use ($user) {

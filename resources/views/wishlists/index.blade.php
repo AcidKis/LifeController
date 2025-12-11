@@ -28,14 +28,8 @@
             <div class="card-content">
                 <div class="card-header">
                     <h3 class="card-title">{{ $wishlist->title }}</h3>
-                    <span class="card-tag {{ $wishlist->visibility === 'public' ? 'shared' : '' }}">
-                        @if($wishlist->visibility === 'public')
-                        Публичный
-                        @elseif($wishlist->visibility === 'shared')
-                        Общий
-                        @else
-                        Личный
-                        @endif
+                    <span class="card-tag">
+                        {{ $wishlist->visibility->getLabel() }}
                     </span>
                 </div>
 
@@ -56,7 +50,7 @@
                 <div class="card-meta">
                     <div class="meta-left">
                         <span>Владелец: {{ $wishlist->user->name }}</span>
-                        <span>Записей: {{ $wishlist->total_items }}</span>
+                        <span>Записей: {{ $wishlist->items_count }}</span>
                         @if($wishlist->editorUsers->count() > 0)
                         <span>Редакторы: {{ $wishlist->editorUsers->count() }}</span>
                         @endif

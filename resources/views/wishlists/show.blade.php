@@ -76,7 +76,6 @@
 
         <!-- Действия -->
         <div class="header-actions">
-            @if($wishlist->canEdit(Auth::user()))
             <a href="{{ route('wishlists.edit', $wishlist) }}" class="action-button secondary">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
@@ -89,12 +88,10 @@
                 </svg>
                 Добавить запись
             </button>
-            @endif
         </div>
     </div>
 
     <!-- Форма добавления новой записи -->
-    @if($wishlist->canEdit(Auth::user()))
     <div id="addItemForm" class="add-item-form hidden">
         <div class="form-header">
             <h3>Добавить новую запись</h3>
@@ -167,10 +164,8 @@
             </div>
         </form>
     </div>
-    @endif
 
     <!-- Модальное окно редактирования записи -->
-    @if($wishlist->canEdit(Auth::user()))
     <div id="editItemModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -246,7 +241,6 @@
             </form>
         </div>
     </div>
-    @endif
 
     <!-- Список записей вишлиста -->
     <div class="wishlist-items-section">
@@ -338,9 +332,7 @@
             </svg>
             <h3>Пока нет записей в вишлисте</h3>
             <p>Добавьте первую запись, чтобы начать заполнять вишлист</p>
-            @if($wishlist->canEdit(Auth::user()))
             <button class="cta-button" onclick="showAddItemForm()">Добавить первую запись</button>
-            @endif
         </div>
         @endif
     </div>

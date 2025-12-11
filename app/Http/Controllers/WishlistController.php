@@ -6,6 +6,7 @@ use App\Models\Wishlist;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 class WishlistController extends Controller
 {
@@ -20,7 +21,6 @@ class WishlistController extends Controller
             ->active()
             ->ordered()
             ->get();
-
         return view('wishlists.index', compact('wishlists'));
     }
 
@@ -38,6 +38,7 @@ class WishlistController extends Controller
      */
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -48,7 +49,6 @@ class WishlistController extends Controller
             'editor_users' => 'nullable|array',
             'editor_users.*' => 'exists:users,id',
         ]);
-
         $wishlist = Wishlist::create([
             'user_id' => Auth::id(),
             'title' => $validated['title'],
@@ -59,12 +59,10 @@ class WishlistController extends Controller
             'is_archived' => false,
         ]);
 
-        // Прикрепляем пользователей для просмотра (если выбрана общая видимость)
         if ($validated['visibility'] === 'shared' && isset($validated['viewer_users'])) {
             $wishlist->viewerUsers()->sync($validated['viewer_users']);
         }
 
-        // Прикрепляем пользователей для редактирования (если выбрано выбранные пользователи)
         if ($validated['edit_permission'] === 'selected' && isset($validated['editor_users'])) {
             $wishlist->editorUsers()->sync($validated['editor_users']);
         }
@@ -78,13 +76,12 @@ class WishlistController extends Controller
      */
     public function show(Wishlist $wishlist)
     {
-        // Проверяем доступ к вишлисту
-        if (!$wishlist->canView(Auth::user())) {
-            abort(403, 'Доступ запрещен');
+        if (! Gate::allows('view', $wishlist)) {
+            abort(403);
         }
 
         $wishlist->load(['user', 'items', 'editorUsers', 'viewerUsers']);
-        
+
         return view('wishlists.show', compact('wishlist'));
     }
 
@@ -93,13 +90,13 @@ class WishlistController extends Controller
      */
     public function edit(Wishlist $wishlist)
     {
-        if (!$wishlist->canEdit(Auth::user())) {
-            abort(403, 'Доступ запрещен');
+        if (! Gate::allows('update', $wishlist)) {
+            abort(403);
         }
 
         $users = User::where('id', '!=', Auth::id())->get();
         $wishlist->load(['viewerUsers', 'editorUsers']);
-        
+
         return view('wishlists.edit', compact('wishlist', 'users'));
     }
 
@@ -108,8 +105,8 @@ class WishlistController extends Controller
      */
     public function update(Request $request, Wishlist $wishlist)
     {
-        if (!$wishlist->canEdit(Auth::user())) {
-            abort(403, 'Доступ запрещен');
+        if (! Gate::allows('update', $wishlist)) {
+            abort(403);
         }
 
         $validated = $request->validate([
@@ -153,8 +150,8 @@ class WishlistController extends Controller
      */
     public function destroy(Wishlist $wishlist)
     {
-        if ($wishlist->user_id !== Auth::id()) {
-            abort(403, 'Доступ запрещен');
+        if (! Gate::allows('delete', $wishlist)) {
+            abort(403);
         }
 
         $wishlist->delete();

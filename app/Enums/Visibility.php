@@ -15,7 +15,7 @@ enum Visibility: string implements HasLabel, HasColor
     {
         return match ($this) {
             self::PRIVATE => 'Приватный',
-            self::PUBLIC => 'Публичный',
+            self::PUBLIC => 'Для всех',
             self::SHARED => 'Доступно некоторым',
         };
     }

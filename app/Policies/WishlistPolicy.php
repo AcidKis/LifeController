@@ -14,17 +14,14 @@ class WishlistPolicy
      */
     public function view(User $user, Wishlist $wishlist): bool
     {
-        // Владелец всегда может просматривать
         if ($wishlist->user_id === $user->id) {
             return true;
         }
 
-        // Публичные вишлисты доступны всем
         if ($wishlist->visibility === Visibility::PUBLIC) {
             return true;
         }
 
-        // Доступ только выбранным пользователям
         if ($wishlist->visibility === Visibility::SHARED) {
             return $wishlist->viewerUsers()->where('user_id', $user->id)->exists();
         }
