@@ -9,9 +9,6 @@ use App\Enums\EditPermission;
 
 class WishlistPolicy
 {
-    /**
-     * Проверка на просмотр вишлиста
-     */
     public function view(User $user, Wishlist $wishlist): bool
     {
         if ($wishlist->user_id === $user->id) {
@@ -29,17 +26,12 @@ class WishlistPolicy
         return false;
     }
 
-    /**
-     * Проверка на редактирование вишлиста
-     */
     public function update(User $user, Wishlist $wishlist): bool
     {
-        // Владелец всегда может редактировать
         if ($wishlist->user_id === $user->id) {
             return true;
         }
 
-        // Доступ только выбранным редакторам
         if ($wishlist->edit_permission === EditPermission::SELECTED) {
             return $wishlist->editorUsers()->where('user_id', $user->id)->exists();
         }
@@ -54,12 +46,12 @@ class WishlistPolicy
     {
         return $wishlist->user_id === $user->id;
     }
+
     public function create(User $user): bool
     {
         // Любой аутентифицированный пользователь может создавать вишлисты
         return true;
     }
-
 
     /**
      * Проверка на добавление элементов

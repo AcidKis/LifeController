@@ -76,22 +76,28 @@
 
         <!-- Действия -->
         <div class="header-actions">
+            @can('update', $wishlist)
             <a href="{{ route('wishlists.edit', $wishlist) }}" class="action-button secondary">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
                 </svg>
                 Редактировать
             </a>
+            @endcan
+            
+            @can('addItem', $wishlist)
             <button class="action-button primary" onclick="showAddItemForm()">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
                 </svg>
                 Добавить запись
             </button>
+            @endcan
         </div>
     </div>
 
-    <!-- Форма добавления новой записи -->
+    <!-- Форма добавления новой записи (показываем только если есть права) -->
+    @can('addItem', $wishlist)
     <div id="addItemForm" class="add-item-form hidden">
         <div class="form-header">
             <h3>Добавить новую запись</h3>
@@ -164,8 +170,10 @@
             </div>
         </form>
     </div>
+    @endcan
 
     <!-- Модальное окно редактирования записи -->
+    @can('addItem', $wishlist)
     <div id="editItemModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -241,6 +249,7 @@
             </form>
         </div>
     </div>
+    @endcan
 
     <!-- Список записей вишлиста -->
     <div class="wishlist-items-section">
@@ -253,13 +262,14 @@
         <div class="items-grid">
             @foreach($wishlist->items as $item)
             <div class="wishlist-item {{ $item->completed ? 'completed' : '' }}" data-item-id="{{ $item->id }}">
+                <!-- Чекбокс выполнения (только для тех, кто может редактировать) -->
                 <div class="item-checkbox">
-                    @if($wishlist->canEdit(Auth::user()))
+                    @can('update', $wishlist)
                     <input type="checkbox" id="item-{{ $item->id }}" {{ $item->completed ? 'checked' : '' }}
                         data-url="{{ route('wishlist-items.toggle', $item->id) }}"
                         onchange="lifeFlow.toggleItemCompletion(this)">
                     <label for="item-{{ $item->id }}"></label>
-                    @endif
+                    @endcan
                 </div>
 
                 <!-- Картинка -->
@@ -303,7 +313,7 @@
                         </a>
                         @endif
 
-                        @if($wishlist->canEdit(Auth::user()))
+                        @can('update', $wishlist)
                         <div class="item-actions">
                             <button class="icon-button" onclick="lifeFlow.editItem({{ $item->id }})" title="Редактировать">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -319,7 +329,7 @@
                                 </svg>
                             </button>
                         </div>
-                        @endif
+                        @endcan
                     </div>
                 </div>
             </div>
@@ -332,7 +342,9 @@
             </svg>
             <h3>Пока нет записей в вишлисте</h3>
             <p>Добавьте первую запись, чтобы начать заполнять вишлист</p>
+            @can('addItem', $wishlist)
             <button class="cta-button" onclick="showAddItemForm()">Добавить первую запись</button>
+            @endcan
         </div>
         @endif
     </div>

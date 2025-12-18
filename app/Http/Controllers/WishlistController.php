@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Gate;
 
 class WishlistController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $wishlists = Wishlist::forUser(Auth::user())
@@ -24,18 +21,12 @@ class WishlistController extends Controller
         return view('wishlists.index', compact('wishlists'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         $users = User::where('id', '!=', Auth::id())->get();
         return view('wishlists.create', compact('users'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
 
@@ -70,10 +61,6 @@ class WishlistController extends Controller
         return redirect()->route('wishlists.index')
             ->with('success', 'Вишлист успешно создан!');
     }
-
-    /**
-     * Display the specified resource.
-     */
     public function show(Wishlist $wishlist)
     {
         if (! Gate::allows('view', $wishlist)) {
@@ -84,10 +71,6 @@ class WishlistController extends Controller
 
         return view('wishlists.show', compact('wishlist'));
     }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Wishlist $wishlist)
     {
         if (! Gate::allows('update', $wishlist)) {
@@ -99,10 +82,6 @@ class WishlistController extends Controller
 
         return view('wishlists.edit', compact('wishlist', 'users'));
     }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Wishlist $wishlist)
     {
         if (! Gate::allows('update', $wishlist)) {
@@ -145,9 +124,6 @@ class WishlistController extends Controller
             ->with('success', 'Вишлист успешно обновлен!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Wishlist $wishlist)
     {
         if (! Gate::allows('delete', $wishlist)) {
